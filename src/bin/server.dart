@@ -95,7 +95,7 @@ Future main() async {
                 .write((auth == null || !auth.complete) ? 'invalid' : 'valid');
             await request.response.close();
             break;
-          case '/authwait':
+          case '/auth/wait':
             authWaitRequest(request);
             break;
           default:
@@ -103,9 +103,7 @@ Future main() async {
         }
         break;
       case 'POST':
-        var params;
-        await request.listen((event) =>
-            params = Uri.splitQueryString(String.fromCharCodes(event)));
+        var params = request.uri.queryParameters;
         switch (request.uri.path) {
           case '/insert':
             if (!(params.containsKey('owner') &&
@@ -197,42 +195,9 @@ void googleAuthGrant(HttpRequest request) async {
     print('authWaitRequest closed (waited for authgrant).');
   }
   auth.mutex.release();
-  request.response.write('Authentication successful');
+  request.response
+      .write('Authentication successful. Please return to the app.');
   await request.response.close();
-  /*
-  var queryParams = request.uri.queryParameters;
-  if (queryParams.containsKey('error')) {
-    throw Exception('Authorization failed: error: ${queryParams['error']}');
-  }
-  var authorizationCode = queryParams['code'];
-  // tokreq and tokgrant are handled by Google API :)
-  final clientId =
-      auth.ClientId(clientCredentials['id'], clientCredentials['secret']);
-  var baseClient = http.Client();
-  var accessCredentials = await auth.obtainAccessCredentialsViaCodeExchange(
-      baseClient, clientId, authorizationCode,
-      redirectUrl: redirectUrl);
-  // Google API builds us a self-refreshing client from the token+ retrieved
-  var authClient = auth.authenticatedClient(baseClient, accessCredentials);
-  var peepsApi = peeps.PeopleApi(authClient);
-  var userPerson = await peepsApi.people
-      .get('people/me', personFields: 'names,emailAddresses');
-  appSessions[deviceKey].user = {
-    'name': userPerson.names[0].displayName,
-    'email': userPerson.emailAddresses[0].value
-  };
-  */
-  // handle app session progress stuff
-  /*
-  appSessions[deviceKey].credentials = accessCredentials;
-  appSessions[deviceKey].authgrantRequest = request;
-  await request.response.close();
-  if (appSessions[deviceKey].authcompleteQuery != null) {
-    await appSessions[deviceKey].authcompleteQuery.response.close();
-    print('queryAuthComplete closed (held and resolved by authgrant).');
-  }
-  appSessions[deviceKey].mutex.release();
-  print('token received, user data written');*/
 }
 
 void authWaitRequest(HttpRequest request) async {
